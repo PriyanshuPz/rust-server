@@ -1,0 +1,8 @@
+{
+  "name": "Rust Web Server Development Environment",
+  "image": "rust:latest",
+  "forwardPorts": [
+    8080
+  ],
+  "postCreateCommand": "cargo build"
+}

@@ -1,4 +1,5 @@
 pub mod constants;
+pub mod controllers;
 pub mod methods;
 pub mod request;
 pub mod response;

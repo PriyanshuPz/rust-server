@@ -36,7 +36,7 @@ fn handle_connection(mut stream: TcpStream) {
         Ok(r) => {
             let res = match r.method.as_str() {
                 "GET" => Methods::handle_get(r),
-                // "POST" => Methods::handle_post(r),
+                "POST" => Methods::handle_post(r),
                 // "PUT" => Methods::handle_put(r),
                 // "DELETE" => Methods::handle_delete(r),
                 &_ => Methods::handle_error("Invalid Method"),

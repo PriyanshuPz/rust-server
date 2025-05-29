@@ -37,56 +37,69 @@ impl Request {
                 }
             }
         }
-        let binding = String::from_utf8(received).unwrap();
-        let mut req_list: Vec<&str> = binding.split_inclusive("\n").collect();
+        let request_text = String::from_utf8(received).unwrap();
 
-        let mut headers: HashMap<String, String> = HashMap::new();
-        let mut query: HashMap<String, String> = HashMap::new();
-        // metadata METHOD AND PATH
-        let req_line_s = req_list[0];
-        let mut wd = req_line_s.split_ascii_whitespace();
-        // remember to get this first
-        let req_method = wd.next().unwrap();
-        // this second it can mess. It took me 2 hours!
-        let full_path = wd.next().unwrap();
-        let de_path: Vec<&str> = full_path.split("?").collect();
-        let path = de_path[0];
+        // Split request lines (keeping newline characters)
+        let mut request_lines: Vec<&str> = request_text.split_inclusive('\n').collect();
 
-        if de_path.len() > 1 {
-            let query_str = de_path.get(1..).unwrap().join("");
+        // Store headers and query parameters
+        let mut header_map: HashMap<String, String> = HashMap::new();
+        let mut query_params: HashMap<String, String> = HashMap::new();
 
-            let de_query: Vec<&str> = query_str.split("&").collect();
+        // First line of HTTP request, e.g., "GET /path?x=1 HTTP/1.1"
+        let request_line = request_lines[0];
+        let mut parts = request_line.split_ascii_whitespace();
+        // Extract HTTP method and full path
+        let http_method = parts.next().unwrap();
+        let full_path = parts.next().unwrap();
 
-            for q in de_query {
-                let (name, value) = q.split_once("=").unwrap();
+        // Separate path and query string (e.g., "/search?q=rust")
+        let path_and_query: Vec<&str> = full_path.split('?').collect();
+        let path = path_and_query[0];
 
-                query
-                    .insert(name.to_string(), value.to_string())
-                    .unwrap_or_default(); // prevent duplicate query
+        if path_and_query.len() > 1 {
+            let query_string = path_and_query[1..].join("");
+
+            let query_pairs: Vec<&str> = query_string.split("&").collect();
+
+            for pair in query_pairs {
+                if let Some((key, value)) = pair.split_once('=') {
+                    query_params.insert(key.to_string(), value.to_string());
+                }
             }
         }
 
-        let idx = req_list.iter().position(|&r| r == "\r\n").unwrap();
+        // Find the index of the first blank line (i.e., `\r\n`) to separate headers from body
+        let blank_line_index = request_lines
+            .iter()
+            .position(|&line| line == "\r\n")
+            .unwrap();
 
         // at this point i am a genius. I love rust!
         // fixed this shit and extracted the content from this.
-        let b = &mut req_list.split_off(idx);
-        b.remove(0); // removes spaces
-        let content: String = String::from(b.join(""));
+        // Split the lines: everything after blank line is the body
+        let body_lines = &mut request_lines.split_off(blank_line_index);
+        body_lines.remove(0); // Remove the blank line itself
+        let body_content = body_lines.join(""); // Reconstruct body as a single string
 
         // now let's fix the header
-        req_list.remove(0); // remove meta line
-        for head in req_list {
-            let (name, value) = head.split_once(": ").unwrap();
-            headers.insert(name.to_string(), value.to_string().replace("\r\n", ""));
+        // Remove the request line (already processed)
+        request_lines.remove(0);
+
+        // Parse headers
+        for header_line in request_lines {
+            if let Some((key, value)) = header_line.split_once(": ") {
+                let clean_value = value.replace("\r\n", "");
+                header_map.insert(key.to_string(), clean_value);
+            }
         }
 
         Ok(Self {
-            method: req_method.to_string(),
+            method: http_method.to_string(),
             path: path.to_string(),
-            content,
-            headers,
-            query,
+            content: body_content,
+            headers: header_map,
+            query: query_params,
         })
     }
 }

@@ -69,6 +69,9 @@ impl Request {
             }
         }
 
+        // Remove the request line (already processed)
+        request_lines.remove(0);
+
         // Find the index of the first blank line (i.e., `\r\n`) to separate headers from body
         let blank_line_index = request_lines
             .iter()
@@ -83,8 +86,6 @@ impl Request {
         let body_content = body_lines.join(""); // Reconstruct body as a single string
 
         // now let's fix the header
-        // Remove the request line (already processed)
-        request_lines.remove(0);
 
         // Parse headers
         for header_line in request_lines {

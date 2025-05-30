@@ -44,7 +44,7 @@ impl Methods {
     pub fn handle_error(error: &str) -> Response {
         let payload = format!("{{\"message\": \"{}\"}}", error);
 
-        Response::json(200, &payload, None)
+        Response::json(500, &payload, None)
     }
 
     pub fn to_string(response: &Response) -> String {

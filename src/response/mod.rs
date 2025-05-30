@@ -13,6 +13,7 @@ impl Response {
         ];
 
         let headers = headers.unwrap_or_else(|| vec![]);
+
         let status_text = match status {
             200 => "200 OK".to_string(),
             201 => "201 Created".to_string(),
@@ -32,7 +33,7 @@ impl Response {
             505 => "505 HTTP Version Not Supported".to_string(),
             _ => format!("{} Unknown", status),
         };
-        Response {
+        Self {
             status_text,
             headers: [pre_dermined_headers, headers].concat(),
             body: body.to_string(),
